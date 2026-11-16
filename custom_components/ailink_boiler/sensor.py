@@ -13,7 +13,8 @@ from homeassistant.const import UnitOfPower, UnitOfTemperature, UnitOfVolumeFlow
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .api import is_device_online
+from .const import DEVICE_STALE_SECONDS, DOMAIN
 from .coordinator import AilinkCoordinator
 from .entity import AilinkEntity
 
@@ -99,6 +100,13 @@ class AilinkStatusSensor(AilinkEntity, SensorEntity):
         self._attr_native_unit_of_measurement = description.native_unit_of_measurement
         self._attr_device_class = description.device_class
         self._attr_state_class = description.state_class
+
+    @property
+    def available(self) -> bool:
+        """设备离线时传感器不可用，避免展示上一次缓存的读数。"""
+        if not super().available:
+            return False
+        return is_device_online(self.coordinator.data or {}, DEVICE_STALE_SECONDS)
 
     @property
     def native_value(self) -> float | None:

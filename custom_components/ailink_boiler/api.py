@@ -44,6 +44,10 @@ class AilinkConnectionError(AilinkError):
     """网络不可达或服务异常。"""
 
 
+class AilinkDeviceError(AilinkError):
+    """设备离线、不可达或拒绝执行指令。"""
+
+
 def token_expires_at(token: str) -> int:
     """解析 JWT 的 exp 字段，解析失败返回 0。"""
     try:
@@ -167,6 +171,11 @@ class AilinkApi:
             raise AilinkAuthError(
                 f"认证失败: status={business_status} msg={data.get('msg')}"
             )
+        if business_status == "500":
+            # 壁挂炉离线时云端同样返回 500 下发失败，这里统一按设备问题处理
+            raise AilinkDeviceError(
+                f"设备未响应（可能离线）: {data.get('msg')}"
+            )
         raise AilinkError(
             f"接口返回失败: status={business_status} msg={data.get('msg')}"
         )
@@ -241,6 +250,11 @@ class AilinkApi:
                 if isinstance(event, dict) and event.get("identifier") == "post":
                     output = event.get("outputData")
                     if isinstance(output, dict):
+                        # 附带设备自身上报时间，供在线判定使用
+                        profile = parsed.get("profile") or {}
+                        output = dict(output)
+                        output["_eventTime"] = profile.get("eventTime", "")
+                        output["_devState"] = info.get("devState")
                         return output
         output = parsed.get("outputData")
         if isinstance(output, dict):
@@ -287,3 +301,21 @@ def is_cruise_running(output: dict[str, Any]) -> bool:
     if number(output.get("preWork")) == 1:
         return True
     return number(output.get("waterPumpSpeed")) > 0
+
+
+def is_device_online(output: dict[str, Any], stale_seconds: int) -> bool:
+    """判断设备是否在线。
+
+    依据两项：云端 devState 不为 0，且设备自报的 eventTime 在允许的时间窗内。
+    设备离线时云端仍会返回上一次缓存的属性，必须靠时间戳排除陈旧数据。
+    """
+    if str(output.get("_devState")) == "0":
+        return False
+    event_time = output.get("_eventTime")
+    if not isinstance(event_time, str) or not event_time:
+        return False
+    try:
+        reported = time.mktime(time.strptime(event_time, "%Y-%m-%d %H:%M:%S"))
+    except ValueError:
+        return False
+    return (time.time() - reported) <= stale_seconds

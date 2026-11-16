@@ -12,8 +12,8 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 
-from .api import AilinkError, is_cruise_running
-from .const import DOMAIN
+from .api import AilinkDeviceError, AilinkError, is_cruise_running, is_device_online
+from .const import DEVICE_STALE_SECONDS, DOMAIN
 from .coordinator import AilinkCoordinator
 from .entity import AilinkEntity
 
@@ -42,6 +42,13 @@ class AilinkCruiseSwitch(AilinkEntity, SwitchEntity):
         self._optimistic_until = 0.0
 
     @property
+    def available(self) -> bool:
+        """设备离线时把实体标记为不可用，避免显示陈旧状态。"""
+        if not super().available:
+            return False
+        return is_device_online(self.coordinator.data or {}, DEVICE_STALE_SECONDS)
+
+    @property
     def is_on(self) -> bool:
         """优先返回短时间内的乐观状态，之后以设备上报为准。"""
         if (
@@ -63,6 +70,10 @@ class AilinkCruiseSwitch(AilinkEntity, SwitchEntity):
         """下发指令并安排两次延迟刷新。"""
         try:
             await self.coordinator.api.async_set_cruise(enabled)
+        except AilinkDeviceError as err:
+            raise HomeAssistantError(
+                f"壁挂炉当前不可控，请确认设备已通电并联网: {err}"
+            ) from err
         except AilinkError as err:
             raise HomeAssistantError(f"热水循环指令失败: {err}") from err
 
