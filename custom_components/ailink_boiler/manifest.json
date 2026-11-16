@@ -1,0 +1,11 @@
+{
+  "domain": "ailink_boiler",
+  "name": "AI-LiNK Boiler",
+  "codeowners": ["@deyangchu"],
+  "config_flow": true,
+  "documentation": "https://github.com/deyangchu/ailink-boiler-ha",
+  "issue_tracker": "https://github.com/deyangchu/ailink-boiler-ha/issues",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "0.1.0"
+}

@@ -1,0 +1,45 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect AI-LiNK boiler",
+        "description": "Enter the account parameters and access token captured from the AI-LiNK app. The integration validates them against the cloud API before creating the entry.",
+        "data": {
+          "user_id": "User ID (userId)",
+          "family_id": "Family ID (familyId)",
+          "device_id": "Device ID (deviceId)",
+          "access_token": "Access token",
+          "mobile": "Mobile number (optional)",
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The token is invalid or expired",
+      "cannot_connect": "Cannot reach the AI-LiNK service",
+      "unsupported_device": "This device is not a boiler (product type must be 24)",
+      "unknown": "Unexpected error, check the logs"
+    },
+    "abort": {
+      "already_configured": "This device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AI-LiNK boiler options",
+        "description": "Adjust the polling interval or paste a new access token. Leave the token blank to keep the current one.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "access_token": "New access token (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The token is invalid or expired",
+      "cannot_connect": "Cannot reach the AI-LiNK service",
+      "unsupported_device": "This device is not a boiler (product type must be 24)",
+      "unknown": "Unexpected error, check the logs"
+    }
+  }
+}

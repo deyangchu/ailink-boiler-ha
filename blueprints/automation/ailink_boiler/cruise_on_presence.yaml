@@ -1,0 +1,45 @@
+blueprint:
+  name: AI-LiNK 壁挂炉按需热水循环
+  description: 指定传感器触发后开启热水循环，并在设定分钟数后自动关闭。
+  domain: automation
+  source_url: https://github.com/deyangchu/ailink-boiler-ha/blob/main/blueprints/automation/ailink_boiler/cruise_on_presence.yaml
+  input:
+    trigger_entity:
+      name: 触发传感器
+      description: 例如浴室人体存在传感器、门磁或无线按钮的动作实体。
+      selector:
+        entity:
+          domain: binary_sensor
+    cruise_switch:
+      name: 热水循环开关
+      description: 集成生成的「热水循环」开关实体。
+      selector:
+        entity:
+          domain: switch
+    duration:
+      name: 循环时长
+      description: 开启后保持多少分钟，建议 3 到 5 分钟。
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 30
+          step: 1
+          unit_of_measurement: 分钟
+
+trigger:
+  - platform: state
+    entity_id: !input trigger_entity
+    to: "on"
+
+action:
+  - service: switch.turn_on
+    target:
+      entity_id: !input cruise_switch
+  - delay:
+      minutes: !input duration
+  - service: switch.turn_off
+    target:
+      entity_id: !input cruise_switch
+
+mode: restart

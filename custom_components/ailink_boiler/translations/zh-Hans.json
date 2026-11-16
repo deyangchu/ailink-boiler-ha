@@ -1,0 +1,45 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "连接 AI-LiNK 壁挂炉",
+        "description": "填写抓包得到的账号参数和访问令牌。提交时会实际调用一次云端接口进行校验。",
+        "data": {
+          "user_id": "用户 ID（userId）",
+          "family_id": "家庭 ID（familyId）",
+          "device_id": "设备 ID（deviceId）",
+          "access_token": "访问令牌（access_token）",
+          "mobile": "手机号（可选）",
+          "scan_interval": "轮询间隔（秒）"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "令牌无效或已过期，请重新抓包获取",
+      "cannot_connect": "无法连接 AI-LiNK 服务，请检查网络",
+      "unsupported_device": "该设备不是壁挂炉（云端类别必须为 24）",
+      "unknown": "未知错误，请查看日志"
+    },
+    "abort": {
+      "already_configured": "该设备已经配置"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AI-LiNK 壁挂炉选项",
+        "description": "调整轮询间隔，或粘贴新的访问令牌。访问令牌留空表示保持当前令牌。",
+        "data": {
+          "scan_interval": "轮询间隔（秒）",
+          "access_token": "新的访问令牌（可选）"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "令牌无效或已过期，请重新抓包获取",
+      "cannot_connect": "无法连接 AI-LiNK 服务，请检查网络",
+      "unsupported_device": "该设备不是壁挂炉（云端类别必须为 24）",
+      "unknown": "未知错误，请查看日志"
+    }
+  }
+}
