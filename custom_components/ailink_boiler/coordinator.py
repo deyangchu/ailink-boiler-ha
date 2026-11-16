@@ -43,6 +43,8 @@ class AilinkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.device_name = entry.title
         # 记录本次加载时的选项，用于区分“选项变化”和“仅令牌写回”
         self.applied_options = dict(entry.options)
+        # 避免令牌失效时反复弹出重新认证
+        self._reauth_started = False
 
     def _persist_token(self) -> None:
         """令牌变化时写回配置项，重启后无需重新填写。"""
@@ -52,6 +54,14 @@ class AilinkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.entry,
                 data={**self.entry.data, CONF_ACCESS_TOKEN: self.api.access_token},
             )
+
+    def _start_reauth(self) -> None:
+        """令牌彻底失效时启动重新认证流程，让用户在界面上更新令牌。"""
+        if getattr(self, "_reauth_started", False):
+            return
+        self._reauth_started = True
+        _LOGGER.warning("令牌已彻底失效，请在集成页面更新访问令牌")
+        self.entry.async_start_reauth(self.hass)
 
     async def _async_update_data(self) -> dict[str, Any]:
         """拉取一次设备状态，认证失败时强制续期后重试一次。"""
@@ -65,6 +75,12 @@ class AilinkCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self.api.async_refresh_token()
                 self._persist_token()
                 return await self.api.async_get_output_data()
+            except AilinkAuthError as retry_err:
+                # 连续期都失败说明令牌已彻底失效，进入重新认证
+                self._start_reauth()
+                raise UpdateFailed(
+                    "令牌已失效，请在集成页面更新访问令牌"
+                ) from retry_err
             except AilinkError as retry_err:
                 raise UpdateFailed(str(retry_err)) from retry_err
         except AilinkError as err:

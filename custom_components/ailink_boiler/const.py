@@ -19,6 +19,8 @@ PATH_DEVICE_INFO = "/AiLinkService/device/queryDeviceInfo"
 PATH_DEVICE_STATUS = "/AiLinkService/appDevice/getDeviceCurrInfo"
 PATH_INVOKE = "/AiLinkService/device/invokeMethod"
 PATH_LAST_TOKEN = "/AiLinkService/api/getLastToken"
+PATH_FAMILY_LIST = "/AiLinkService/family/getFamilyList"
+PATH_HOME_DEVICES = "/AiLinkService/appDevice/getHomepageV2"
 
 # 签名规则，来自 AI家智控 H5 的实际请求
 ENCODE_SALT = "AILink_2021#"
@@ -36,7 +38,10 @@ MAX_SCAN_INTERVAL = 600
 TOKEN_REFRESH_MARGIN = 120
 HTTP_TIMEOUT = 20
 
-# 设备超过该秒数没有新上报，视为离线（设备正常每分钟上报一次）
-DEVICE_STALE_SECONDS = 300
+# 判定设备离线的时间阈值。
+# 优先级：云端 devState 为 0 直接判定离线；否则再看设备自报时间。
+# 壁挂炉并非每分钟上报，实测可能间隔 30 分钟以上，因此这里放宽到 2 小时，
+# 只用于识别“云端仍返回陈旧缓存”的情况。
+DEVICE_STALE_SECONDS = 7200
 
 PLATFORMS = [Platform.SWITCH, Platform.SENSOR]

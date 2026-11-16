@@ -23,6 +23,8 @@ from .const import (
     HTTP_TIMEOUT,
     PATH_DEVICE_INFO,
     PATH_DEVICE_STATUS,
+    PATH_FAMILY_LIST,
+    PATH_HOME_DEVICES,
     PATH_INVOKE,
     PATH_LAST_TOKEN,
     SIGN_SECRET,
@@ -46,6 +48,25 @@ class AilinkConnectionError(AilinkError):
 
 class AilinkDeviceError(AilinkError):
     """设备离线、不可达或拒绝执行指令。"""
+
+
+def build_encode(device_id: str, family_id: str, user_id: str) -> str:
+    """设备级 encode：md5(deviceId + familyId + userId + 盐)。"""
+    raw = f"{device_id}{family_id}{user_id}{ENCODE_SALT}"
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+
+def token_username(token: str) -> str:
+    """从 JWT 的 username 字段解析出 userId，失败返回空串。"""
+    try:
+        payload = token.split(".")[1]
+        padding = "=" * (-len(payload) % 4)
+        data = json.loads(
+            base64.urlsafe_b64decode(payload + padding).decode("utf-8")
+        )
+        return str(data.get("username") or "")
+    except (IndexError, ValueError, KeyError, json.JSONDecodeError):
+        return ""
 
 
 def token_expires_at(token: str) -> int:
@@ -92,8 +113,7 @@ class AilinkApi:
 
     def _encode(self) -> str:
         """设备级 encode：md5(deviceId + familyId + userId + 盐)。"""
-        raw = f"{self.device_id}{self.family_id}{self.user_id}{ENCODE_SALT}"
-        return hashlib.md5(raw.encode("utf-8")).hexdigest()
+        return build_encode(self.device_id, self.family_id, self.user_id)
 
     def _signed_headers(self, body_text: str) -> dict[str, str]:
         """按官方规则生成签名头。"""
@@ -209,19 +229,60 @@ class AilinkApi:
 
     async def async_get_device_info(self) -> dict[str, Any]:
         """查询设备基础信息，用于配置流程校验。"""
+        return await self.async_query_device_info(
+            self.device_id, self.family_id
+        )
+
+    async def async_query_device_info(
+        self, device_id: str, family_id: str
+    ) -> dict[str, Any]:
+        """查询指定设备的基础信息。"""
         data = await self._post_json(
             PATH_DEVICE_INFO,
             {
                 "userId": self.user_id,
-                "familyId": self.family_id,
-                "deviceId": self.device_id,
-                "encode": self._encode(),
+                "familyId": family_id,
+                "deviceId": device_id,
+                "encode": build_encode(device_id, family_id, self.user_id),
             },
         )
         info = data.get("info")
         if not isinstance(info, dict):
             raise AilinkError("设备信息响应缺少 info")
         return info
+
+    async def async_get_families(self) -> list[dict[str, Any]]:
+        """列出账号所在的家庭。用于配置时自动填 familyId。"""
+        data = await self._post_json(
+            PATH_FAMILY_LIST,
+            {"userId": self.user_id},
+        )
+        info = data.get("info")
+        if isinstance(info, list):
+            return [item for item in info if isinstance(item, dict)]
+        return []
+
+    async def async_get_home_devices(self, family_id: str) -> list[dict[str, Any]]:
+        """列出某个家庭下的设备。返回的条目含 deviceId 与 deviceCategory。"""
+        data = await self._post_json(
+            PATH_HOME_DEVICES,
+            {"homePageVersion": "3", "userId": self.user_id, "familyId": family_id},
+        )
+        info = data.get("info") or {}
+        devices: list[dict[str, Any]] = []
+
+        # 新版首页把设备放在 devInfoItemInfoList，旧版放在房间列表里
+        for item in info.get("devInfoItemInfoList") or []:
+            if isinstance(item, dict):
+                devices.append(item)
+        if not devices:
+            for room in info.get("roomInfoItemInfoList") or []:
+                if not isinstance(room, dict):
+                    continue
+                for device in room.get("deviceList") or []:
+                    if isinstance(device, dict):
+                        devices.append(device)
+        return devices
 
     async def async_get_output_data(self) -> dict[str, Any]:
         """查询设备状态并返回 outputData。"""

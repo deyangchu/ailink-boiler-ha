@@ -3,25 +3,38 @@
     "step": {
       "user": {
         "title": "Connect AI-LiNK boiler",
-        "description": "Enter the account parameters and access token captured from the AI-LiNK app. The integration validates them against the cloud API before creating the entry.",
+        "description": "Paste the access token; the integration discovers your account, family and boiler automatically. See the README for how to capture the token.",
         "data": {
-          "user_id": "User ID (userId)",
-          "family_id": "Family ID (familyId)",
-          "device_id": "Device ID (deviceId)",
           "access_token": "Access token",
           "mobile": "Mobile number (optional)",
           "scan_interval": "Polling interval (seconds)"
+        }
+      },
+      "select": {
+        "title": "Select a boiler",
+        "description": "More than one boiler was found on this account. Choose the one to set up.",
+        "data": {
+          "device_id": "Device"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update access token",
+        "description": "The current token has expired. Capture a new one from the app and paste it here.",
+        "data": {
+          "access_token": "Access token"
         }
       }
     },
     "error": {
       "invalid_auth": "The token is invalid or expired",
       "cannot_connect": "Cannot reach the AI-LiNK service",
-      "unsupported_device": "This device is not a boiler (product type must be 24)",
+      "unsupported_device": "No boiler (product type 24) found on this account",
+      "no_device": "Discovery failed; check the token and that a device is bound",
       "unknown": "Unexpected error, check the logs"
     },
     "abort": {
-      "already_configured": "This device is already configured"
+      "already_configured": "This device is already configured",
+      "reauth_successful": "Token updated"
     }
   },
   "options": {

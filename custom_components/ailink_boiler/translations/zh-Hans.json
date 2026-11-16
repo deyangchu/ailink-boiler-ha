@@ -3,25 +3,38 @@
     "step": {
       "user": {
         "title": "连接 AI-LiNK 壁挂炉",
-        "description": "填写抓包得到的账号参数和访问令牌。提交时会实际调用一次云端接口进行校验。",
+        "description": "只需粘贴访问令牌，集成会自动识别你的账号、家庭与壁挂炉。令牌从 AI家智控 App 抓包获取，见 README 的抓包说明。",
         "data": {
-          "user_id": "用户 ID（userId）",
-          "family_id": "家庭 ID（familyId）",
-          "device_id": "设备 ID（deviceId）",
           "access_token": "访问令牌（access_token）",
           "mobile": "手机号（可选）",
           "scan_interval": "轮询间隔（秒）"
+        }
+      },
+      "select": {
+        "title": "选择壁挂炉",
+        "description": "账号下有多台壁挂炉，请选择要接入的一台。",
+        "data": {
+          "device_id": "设备"
+        }
+      },
+      "reauth_confirm": {
+        "title": "更新访问令牌",
+        "description": "当前令牌已失效。请在 App 里重新抓包，把新的访问令牌粘贴到这里。",
+        "data": {
+          "access_token": "访问令牌（access_token）"
         }
       }
     },
     "error": {
       "invalid_auth": "令牌无效或已过期，请重新抓包获取",
       "cannot_connect": "无法连接 AI-LiNK 服务，请检查网络",
-      "unsupported_device": "该设备不是壁挂炉（云端类别必须为 24）",
+      "unsupported_device": "账号下没有找到壁挂炉（云端类别必须为 24）",
+      "no_device": "自动发现失败，请确认令牌有效且账号下已绑定设备",
       "unknown": "未知错误，请查看日志"
     },
     "abort": {
-      "already_configured": "该设备已经配置"
+      "already_configured": "该设备已经配置",
+      "reauth_successful": "令牌已更新"
     }
   },
   "options": {
